@@ -2,6 +2,7 @@ package com.xk.searchcat.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xk.searchcat.constant.UserConstant;
 import com.xk.searchcat.exception.BusinessException;
@@ -266,5 +267,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         queryWrapper.orderBy(SqlUtils.validSortField(sortField), sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
                 sortField);
         return queryWrapper;
+    }
+
+    @Override
+    public Page<User> listUserByPage(UserQueryRequest userQueryRequest) {
+        long current = userQueryRequest.getCurrent();
+        long pageSize = userQueryRequest.getPageSize();
+        return this.page(new Page<>(current, pageSize),
+                this.getQueryWrapper(userQueryRequest));
     }
 }

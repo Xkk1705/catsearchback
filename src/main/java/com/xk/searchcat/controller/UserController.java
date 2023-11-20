@@ -245,17 +245,15 @@ public class UserController {
      * 分页获取用户列表（仅管理员）
      *
      * @param userQueryRequest
-     * @param request
      * @return
      */
     @PostMapping("/list/page")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Page<User>> listUserByPage(@RequestBody UserQueryRequest userQueryRequest,
-                                                   HttpServletRequest request) {
-        long current = userQueryRequest.getCurrent();
+    public BaseResponse<Page<User>> listUserByPage(@RequestBody UserQueryRequest userQueryRequest) {
         long size = userQueryRequest.getPageSize();
-        Page<User> userPage = userService.page(new Page<>(current, size),
-                userService.getQueryWrapper(userQueryRequest));
+        // 限制爬虫
+        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        Page<User> userPage = userService.listUserByPage(userQueryRequest);
         return ResultUtils.success(userPage);
     }
 

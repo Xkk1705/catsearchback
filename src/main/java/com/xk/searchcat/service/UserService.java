@@ -1,6 +1,7 @@
 package com.xk.searchcat.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.xk.searchcat.model.vo.LoginUserVO;
 import com.xk.searchcat.model.dto.user.UserQueryRequest;
@@ -117,4 +118,5 @@ public interface UserService extends IService<User> {
      */
     QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest);
 
+    Page<User> listUserByPage(UserQueryRequest userQueryRequest);
 }
