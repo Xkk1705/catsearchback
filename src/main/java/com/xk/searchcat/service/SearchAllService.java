@@ -14,7 +14,7 @@ public interface SearchAllService {
 
 
 
-
+    @Deprecated
     SearchAllVO listSearchAllByPage(SearchAllQueryRequest searchAllQueryRequest, HttpServletRequest request);
 
     SearchAllVO listSearchDiffererntKindByPage(SearchAllQueryRequest searchAllQueryRequest, HttpServletRequest request);

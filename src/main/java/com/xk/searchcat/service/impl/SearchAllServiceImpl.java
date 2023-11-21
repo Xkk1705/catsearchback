@@ -3,6 +3,7 @@ package com.xk.searchcat.service.impl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.xk.searchcat.common.ErrorCode;
 import com.xk.searchcat.exception.ThrowUtils;
+import com.xk.searchcat.manager.datasourcemanager.*;
 import com.xk.searchcat.model.dto.post.PostQueryRequest;
 import com.xk.searchcat.model.dto.searchall.SearchAllQueryRequest;
 import com.xk.searchcat.model.dto.user.UserQueryRequest;
@@ -34,13 +35,24 @@ public class SearchAllServiceImpl implements SearchAllService {
     @Resource
     private UserService userService;
     @Resource
-    private PostService postService;
-    @Resource
     private PictureService pictureService;
+    @Resource
+    private PostService postService;
+
+    @Resource
+    private PictureDataSource pictureDataSource;
+    @Resource
+    private PostDataSource postDataSource;
+    @Resource
+    private UserDataSource userDataSource;
+
+    @Resource
+    private DataSourceRegister dataSourceRegister;
 
 
     @Override
-    public SearchAllVO listSearchAllByPage(@RequestBody SearchAllQueryRequest searchAllQueryRequest, HttpServletRequest request) {
+    @Deprecated
+    public SearchAllVO listSearchAllByPage(SearchAllQueryRequest searchAllQueryRequest, HttpServletRequest request) {
         String searchText = searchAllQueryRequest.getSearchText();
         long current = searchAllQueryRequest.getCurrent();
         long pageSize = searchAllQueryRequest.getPageSize();
@@ -82,60 +94,26 @@ public class SearchAllServiceImpl implements SearchAllService {
         SearchEnum requestKind = SearchEnum.getEnumByValue(type);
         // 请求提取出的参数
         SearchAllVO searchAllVO = new SearchAllVO();
-        PostQueryRequest postQueryRequest = new PostQueryRequest();
-        UserQueryRequest userQueryRequest = new UserQueryRequest();
         // 请求类被为空查询所有接口
         if (requestKind == null) {
-            // 封装用户查询
-            userQueryRequest.setUserName(searchText);
-            userQueryRequest.setCurrent(current);
-            userQueryRequest.setPageSize(pageSize);
-            // 查询用户
-            Page<User> userPage = userService.listUserByPage(userQueryRequest);
+            // 获取用户数据源
+            Page<User> userPage = userDataSource.onSearch(current, pageSize, searchText, request);
             List<UserVO> userVOList = userService.getUserVO(userPage.getRecords());
-            // 查询图片
-            Page<Picture> picturePage = pictureService.listPictureByPage(current, pageSize, searchText);
+            // 查询图片数据源
+            Page<Picture> picturePage = pictureDataSource.onSearch(current, pageSize, searchText, request);
             List<Picture> pictureList = picturePage.getRecords();
-            // 封装帖子查询
-            postQueryRequest.setCurrent(current);
-            postQueryRequest.setPageSize(pageSize);
-            postQueryRequest.setSearchText(searchText);
-            Page<PostVO> postVOPage = postService.listPostListBypage(postQueryRequest, request);
+            // 封装帖子数据源
+            Page<PostVO> postVOPage = postDataSource.onSearch(current, pageSize, searchText, request);
             List<PostVO> postVOList = postVOPage.getRecords();
 
             searchAllVO.setUserVOList(userVOList);
             searchAllVO.setPostVOList(postVOList);
             searchAllVO.setPictureList(pictureList);
-
         } else {
-            switch (requestKind) {
-                case POST:
-                    // 封装帖子查询
-                    postQueryRequest.setCurrent(current);
-                    postQueryRequest.setPageSize(pageSize);
-                    postQueryRequest.setSearchText(searchText);
-                    Page<PostVO> postVOPage = postService.listPostListBypage(postQueryRequest, request);
-                    List<PostVO> postVOList = postVOPage.getRecords();
-                    searchAllVO.setPostVOList(postVOList);
-                    break;
-                case PICTURE:
-                    Page<Picture> picturePage = pictureService.listPictureByPage(current, pageSize, searchText);
-                    List<Picture> pictureList = picturePage.getRecords();
-                    searchAllVO.setPictureList(pictureList);
-                    break;
-                case USER:
-                    // 封装用户查询
-                    userQueryRequest.setUserName(searchText);
-                    userQueryRequest.setCurrent(current);
-                    userQueryRequest.setPageSize(pageSize);
-                    // 查询用户
-                    Page<User> userPage = userService.listUserByPage(userQueryRequest);
-                    List<UserVO> userVOList = userService.getUserVO(userPage.getRecords());
-                    searchAllVO.setUserVOList(userVOList);
-                    break;
-                default:
-            }
-
+            // 根据type获取数据源信息
+            DataSource typeDataSource = dataSourceRegister.getTypeDataSource(type);
+            Page page = typeDataSource.onSearch(current, pageSize, searchText, request);
+            searchAllVO.setObjectList(page.getRecords());
         }
         return searchAllVO;
     }
